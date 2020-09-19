@@ -7,8 +7,7 @@ const getAllUsers = async () => {
 		`SELECT id, username, name, location FROM users;`
 	);
 
-	return rows;
-};
+	return rows; };
 
 const createUser = async ({ username, password, name, location }) => {
 	try {
@@ -19,7 +18,8 @@ const createUser = async ({ username, password, name, location }) => {
 			[username, password, name, location]
 		);
 		return rows;
-	} catch (err) {
+		
+	} catch (err) {	
 		throw err;
 	}
 };
@@ -118,7 +118,9 @@ const getUserById = async userId => {
 		delete rows.password;
 		rows.posts = getPostsByUser(userId);
 		return rows;
-	} catch (err) {}
+	} catch (err) {
+		throw err;
+	}
 };
 
 module.exports = {

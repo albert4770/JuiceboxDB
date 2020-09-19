@@ -1,4 +1,11 @@
-const { db, getAllUsers, createUser, updateUser, createPost, getAllPosts } = require('./index'); //prettier-ignore
+const {
+	db,
+	getAllUsers,
+	createUser,
+	updateUser,
+	createPost,
+	getAllPosts
+} = require('./index');
 
 const createInitialUsers = async () => {
 	try {
@@ -27,7 +34,7 @@ const createInitialPosts = async () => {
 		});
 		return rows;
 	} catch (err) {
-		// throw ('Error @createPosts', err);
+		throw ('Error @createPosts', err);
 	}
 };
 
