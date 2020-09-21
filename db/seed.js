@@ -4,7 +4,11 @@ const {
 	createUser,
 	updateUser,
 	createPost,
-	getAllPosts
+	getAllPosts,
+	createTags,
+	getPostById,
+	addTagsToPost,
+	getPostsByUser
 } = require('./index');
 
 const createInitialUsers = async () => {
@@ -27,20 +31,63 @@ const createInitialUsers = async () => {
 const createInitialPosts = async () => {
 	try {
 		console.log('Creating initial posts');
-		const { rows } = await createPost({
+		await createPost({
 			authorId: 1,
 			title: 'First post ever',
-			context: 'Hello worldly beings'
+			context: 'Hello worldly beings',
+			tags: ['#sql', '#postgres']
 		});
-		return rows;
+
+		await createPost({
+			authorId: 1,
+			title: 'Second post ever',
+			context: 'Hello worldly beings',
+			tags: ['#node', '#express']
+		});
+
+		await createPost({
+			authorId: 1,
+			title: 'Third post ever',
+			context: 'Hello worldly beings',
+			tags: ['#react', '#jquery', '#html']
+		});
+		// return rows;
 	} catch (err) {
 		throw ('Error @createPosts', err);
 	}
 };
 
+async function createInitialTags() {
+	try {
+		console.log('Starting to create tags...');
+
+		const [happy, sad, inspo, catman] = await createTags([
+			'#happy',
+			'#worst-day-ever',
+			'#youcandoanything',
+			'#catmandoeverything'
+		]);
+
+		const [postOne, postTwo, postThree] = await getAllPosts();
+		// const posts = await getAllPosts();
+		// console.log('Post one id: ', postOne.id);
+
+		await addTagsToPost(postOne.id, [happy, inspo]);
+		await addTagsToPost(postTwo.id, [sad, inspo]);
+		await addTagsToPost(postThree.id, [happy, catman, inspo]);
+
+		console.log('Finished creating tags!');
+	} catch (error) {
+		console.log('Error creating tags!');
+		throw error;
+	}
+}
+
 const dropTables = async () => {
 	try {
 		await db.query(`
+			DROP TABLE IF EXISTS post_tags;
+			DROP TABLE IF EXISTS tags; 
 			DROP TABLE IF EXISTS posts; 
 			DROP TABLE IF EXISTS users;`);
 	} catch (err) {
@@ -64,7 +111,17 @@ const createTables = async () => {
 			"authorId" INTEGER REFERENCES users(id) NOT NULL,
 			title varchar(255) NOT NULL,
 			context TEXT NOT NULL,
-			active BOOLEAN DEFAULT true);`);
+			active BOOLEAN DEFAULT true);
+			
+			CREATE TABLE tags(
+			id SERIAL PRIMARY KEY,
+			name varchar(255) UNIQUE NOT NULL);
+
+			CREATE TABLE post_tags(
+			"postId" INTEGER REFERENCES posts(id),
+			"tagId" INTEGER REFERENCES tags(id),
+			UNIQUE ("postId", "tagId")); 
+			`);
 	} catch (err) {
 		throw err;
 	}
@@ -98,6 +155,12 @@ const testDB = async () => {
 		console.log('Getting all posts');
 		const allPosts = await getAllPosts();
 		console.log(allPosts);
+
+		console.log('Getting posts by user');
+		await getPostsByUser(1);
+
+		// console.log('Getting post by id');
+		// const post = getPostById(1);
 
 		console.log('Finished testing db!');
 	} catch (err) {
