@@ -209,6 +209,15 @@ const createTags = async tagList => {
 	}
 };
 
+const getAllTags = async () => {
+	try {
+		const { rows } = await db.query(`SELECT * FROM tags`);
+		return rows;
+	} catch (err) {
+		throw err;
+	}
+};
+
 const createPostTag = async (postId, tagId) => {
 	try {
 		await db.query(
@@ -244,5 +253,6 @@ module.exports = {
 	getUserById,
 	createTags,
 	getPostById,
-	addTagsToPost
+	addTagsToPost,
+	getAllTags
 };

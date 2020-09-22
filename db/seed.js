@@ -159,12 +159,13 @@ const testDB = async () => {
 		console.log('Getting posts by user');
 		await getPostsByUser(1);
 
-		// console.log('Getting post by id');
-		// const post = getPostById(1);
+		console.log('Getting post by id');
+		const post = await getPostById(3);
+		console.log(post);
 
 		console.log('Finished testing db!');
 	} catch (err) {
-		console.log('Error bitch 2');
+		console.log('Error 2');
 		throw err;
 	}
 };
