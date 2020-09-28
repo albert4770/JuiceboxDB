@@ -60,7 +60,7 @@ postsRouter.patch('/:postId', requireUser, async (req, res, next) => {
 	}
 
 	if (content) {
-		updateFields.context = content;
+		updateFields.content = content;
 	}
 
 	try {

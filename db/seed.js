@@ -34,21 +34,21 @@ const createInitialPosts = async () => {
 		await createPost({
 			authorId: 1,
 			title: 'First post ever',
-			context: 'Hello worldly beings',
+			content: 'Hello worldly beings',
 			tags: ['#sql', '#postgres']
 		});
 
 		await createPost({
 			authorId: 1,
 			title: 'Second post ever',
-			context: 'Hello worldly beings',
+			content: 'Hello worldly beings',
 			tags: ['#node', '#express']
 		});
 
 		await createPost({
 			authorId: 1,
 			title: 'Third post ever',
-			context: 'Hello worldly beings',
+			content: 'Hello worldly beings',
 			tags: ['#react', '#jquery', '#html']
 		});
 		// return rows;
@@ -110,7 +110,7 @@ const createTables = async () => {
 			id SERIAL PRIMARY KEY,
 			"authorId" INTEGER REFERENCES users(id) NOT NULL,
 			title varchar(255) NOT NULL,
-			context TEXT NOT NULL,
+			content TEXT NOT NULL,
 			active BOOLEAN DEFAULT true);
 			
 			CREATE TABLE tags(
