@@ -25,19 +25,31 @@ const getAllUsers = async () => {
 	return rows;
 };
 
+const getUserByUsername = async username => {
+	try {
+		const {
+			rows: [user]
+		} = await db.query(`SELECT * from users WHERE username = $1`, [
+			username
+		]);
+		return user;
+	} catch (err) {
+		err;
+	}
+};
+
 const getUserById = async userId => {
 	try {
-		const { rows } = await db.query(
-			`SELECT * FROM users WHERE id=${userId}`
-		);
+		const {
+			rows: [user]
+		} = await db.query(`SELECT * FROM users WHERE id=${userId}`);
 
-		if (!rows) {
+		if (!user) {
 			return null;
 		}
 
-		delete rows.password;
-		rows.posts = getPostsByUser(userId);
-		return rows;
+		user.posts = await getPostsByUser(userId);
+		return user;
 	} catch (err) {
 		throw err;
 	}
@@ -68,18 +80,19 @@ const updateUser = async (id, fields = {}) => {
 };
 
 // Post functions
-const createPost = async ({ authorId, title, context, tags = [] }) => {
+const createPost = async postData => {
+	const { authorId, title, content, tags } = postData;
+
 	try {
 		const {
 			rows: [post]
 		} = await db.query(
 			`INSERT INTO posts("authorId", title, context) VALUES($1, $2, $3) RETURNING *;`,
-			[authorId, title, context]
+			[authorId, title, content]
 		);
+		const createdTags = await createTags(tags);
 
-		const tagList = await createTags(tags);
-
-		return await addTagsToPost(post.id, tagList);
+		return await addTagsToPost(post.id, createdTags);
 	} catch (err) {
 		throw err;
 	}
@@ -102,24 +115,46 @@ const getAllPosts = async () => {
 	}
 };
 
-const updatePost = async (id, { title, context, active }) => {
-	try {
-		const setString = Object.keys({ title, context, active })
-			.map((key, index) => {
-				return `"${key}=$${index + 1}"`;
-			})
-			.join(', ');
+const updatePost = async (postId, fields = {}) => {
+	// read off the tags & remove that field
+	const { tags } = fields; // might be undefined
+	delete fields.tags;
 
-		if (setString === 0) {
-			return;
+	// build the set string
+	const setString = Object.keys(fields)
+		.map((key, index) => `"${key}"=$${index + 1}`)
+		.join(', ');
+
+	try {
+		// update any fields that need to be updated
+		if (setString.length > 0) {
+			await db.query(
+				`UPDATE posts SET ${setString} WHERE id=${postId} RETURNING *;`,
+				Object.values(fields)
+			);
 		}
 
-		const { rows } = await db.query(
-			`UPDATE posts SET ${setString} WHERE id=${id} RETURNING *`
+		// return early if there's no tags to update
+		if (tags === undefined) {
+			return await getPostById(postId);
+		}
+
+		// make any new tags that need to be made
+		const tagList = await createTags(tags);
+		const tagListIdString = tagList.map(tag => `${tag.id}`).join(', ');
+
+		// delete any post_tags from the database which aren't in that tagList
+		await db.query(
+			`DELETE FROM post_tags WHERE "tagId" NOT IN (${tagListIdString}) AND "postId"=$1;`,
+			[postId]
 		);
-		return rows;
-	} catch (err) {
-		throw err;
+
+		// and create post_tags as necessary
+		await addTagsToPost(postId, tagList);
+
+		return await getPostById(postId);
+	} catch (error) {
+		throw error;
 	}
 };
 
@@ -128,30 +163,24 @@ const getPostById = async postId => {
 		const {
 			rows: [post]
 		} = await db.query(
-			`
-		  SELECT *
-		  FROM posts
-		  WHERE id=$1;
-		`,
+			`SELECT *
+		FROM posts
+		WHERE id=$1;`,
 			[postId]
 		);
 		const { rows: tags } = await db.query(
-			`
-		  SELECT tags.*
-		  FROM tags
-		  JOIN post_tags ON tags.id=post_tags."tagId"
-		  WHERE post_tags."postId"=$1;
-		`,
+			`SELECT tags.*
+		FROM tags
+		JOIN post_tags ON tags.id=post_tags."tagId"
+		WHERE post_tags."postId"=$1;`,
 			[postId]
 		);
 		const {
 			rows: [author]
 		} = await db.query(
-			`
-		  SELECT id, username, name, location
-		  FROM users
-		  WHERE id=$1;
-		`,
+			`SELECT id, username, name, location
+		FROM users
+		WHERE id=$1;`,
 			[post.authorId]
 		);
 		post.tags = tags;
@@ -244,6 +273,7 @@ const addTagsToPost = async (postId, tagList) => {
 module.exports = {
 	db,
 	getAllUsers,
+	getUserByUsername,
 	createUser,
 	updateUser,
 	createPost,
