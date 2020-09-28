@@ -4,7 +4,7 @@ const server = express();
 const { db } = require('./db');
 require('dotenv').config();
 
-const { PORT } = process.env;
+const { PORT = 3000 } = process.env;
 
 server.use(morgan('dev'));
 server.use(express.json());
