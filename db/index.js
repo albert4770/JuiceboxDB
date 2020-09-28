@@ -1,6 +1,8 @@
 const { Client } = require('pg');
 
-const db = new Client('postgres://localhost:5432/juicebox-dev');
+const db = new Client(
+	process.env.DB_URL || 'postgres://localhost:5432/juicebox-dev'
+);
 
 // User functions
 const createUser = async ({ username, password, name, location }) => {
