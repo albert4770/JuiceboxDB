@@ -168,6 +168,11 @@ const getPostById = async postId => {
 		WHERE id=$1;`,
 			[postId]
 		);
+
+		if (!post) {
+			return;
+		}
+
 		const { rows: tags } = await db.query(
 			`SELECT tags.*
 		FROM tags
@@ -203,6 +208,25 @@ const getPostsByUser = async userId => {
 		);
 
 		return posts;
+	} catch (error) {
+		throw error;
+	}
+};
+
+const getPostsByTagName = async tagName => {
+	try {
+		const { rows: postIds } = await db.query(
+			`
+      SELECT posts.id
+      FROM posts
+      JOIN post_tags ON posts.id=post_tags."postId"
+      JOIN tags ON tags.id=post_tags."tagId"
+      WHERE tags.name=$1;
+    `,
+			[tagName]
+		);
+
+		return await Promise.all(postIds.map(post => getPostById(post.id)));
 	} catch (error) {
 		throw error;
 	}
@@ -280,6 +304,7 @@ module.exports = {
 	updatePost,
 	getAllPosts,
 	getPostsByUser,
+	getPostsByTagName,
 	getUserById,
 	createTags,
 	getPostById,

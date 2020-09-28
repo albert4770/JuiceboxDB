@@ -6,7 +6,11 @@ const { requireUser } = require('../api/utils');
 postsRouter.get('/', async (req, res, next) => {
 	const posts = await getAllPosts();
 
-	res.send({ posts });
+	const activePosts = posts.filter(post => {
+		return post.active;
+	});
+
+	res.send({ activePosts });
 });
 
 postsRouter.post('/', requireUser, async (req, res, next) => {
@@ -78,6 +82,37 @@ postsRouter.patch('/:postId', requireUser, async (req, res, next) => {
 	} catch ({ name, message }) {
 		next({ name, message });
 		throw { name, message };
+	}
+});
+
+postsRouter.delete('/:postId', requireUser, async (req, res, next) => {
+	const postId = req.params.postId;
+
+	try {
+		const post = await getPostById(postId);
+
+		if (!post) {
+			throw {
+				name: 'PostNotFoundError',
+				message: 'Could not find a post with that postId'
+			};
+		}
+
+		if (post.author.id === req.user.id) {
+			const inactivePost = await updatePost(postId, { active: false });
+			res.send({ post: inactivePost });
+		} else {
+			next(
+				post
+					? {
+							name: 'Unauthorized',
+							message: 'Cant delete post that isnt yours'
+					  }
+					: { name: 'Post not found', message: 'Post does not exist' }
+			);
+		}
+	} catch ({ name, message }) {
+		next({ name, message });
 	}
 });
 
