@@ -89,7 +89,7 @@ const createPost = async postData => {
 		const {
 			rows: [post]
 		} = await db.query(
-			`INSERT INTO posts("authorId", title, context) VALUES($1, $2, $3) RETURNING *;`,
+			`INSERT INTO posts("authorId", title, content) VALUES($1, $2, $3) RETURNING *;`,
 			[authorId, title, content]
 		);
 		const createdTags = await createTags(tags);
